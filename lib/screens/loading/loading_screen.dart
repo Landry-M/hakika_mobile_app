@@ -33,7 +33,7 @@ class LoadingScreen extends StatelessWidget {
           ),
           const SizedBox(height: 30),
           const Text(
-            'version 1.3.0',
+            'version 2.1.0',
             style: TextStyle(color: Colors.grey),
           )
         ],
