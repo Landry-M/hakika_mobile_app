@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:appwrite/appwrite.dart';
+import 'package:appwrite/models.dart';
 import 'package:email_otp/email_otp.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -11,6 +12,8 @@ import 'package:otp_text_field/otp_text_field.dart';
 
 import '../api/initialize_appwrite.dart';
 import 'user_preferences.dart';
+import 'package:appwrite/models.dart' as models;
+import 'package:package_info_plus/package_info_plus.dart';
 
 class AuthenticationProvider with ChangeNotifier {
   final Pagecontroller = PageController();
@@ -86,6 +89,35 @@ class AuthenticationProvider with ChangeNotifier {
       userInfo.firstLaunchApp
           ? context.go('/presentation')
           : context.go('/login-register');
+    }
+  }
+
+  Future<void> isAppUpToDate(BuildContext context) async {
+    try {
+      final client = InitializeAppwrite().setDefaultParams();
+      final databases = Databases(client);
+      final models.DocumentList docList = await databases.listDocuments(
+        databaseId: '67515e94000ade29c6a3',
+        collectionId: '676c24cd000f8f1d3e71',
+        queries: [],
+      );
+      if (docList.documents.isEmpty) return;
+      final onlineVersion =
+          docList.documents.first.data['version']?.toString() ?? '';
+      final info = await PackageInfo.fromPlatform();
+      final localVersion = info.version;
+      debugPrint('Online version: $onlineVersion');
+      debugPrint('local version: $localVersion');
+      
+      if (onlineVersion == localVersion) {
+        
+        verifyFirstLaunchApp(context);
+      } else {
+        context.goNamed('update-required');
+      }
+    } catch (e) {
+      // En cas d'erreur, on laisse passer pour ne pas bloquer l'utilisateur
+      verifyFirstLaunchApp(context);
     }
   }
 

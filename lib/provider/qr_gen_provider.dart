@@ -19,6 +19,20 @@ class QrGenProvider with ChangeNotifier {
   bool isSending = true;
   var dateMariage;
   var heureMariage;
+  List<String> policesList = ['Dancingscript', 'Parisienne', 'PlaywriteUSA'];
+  String selectedPolice = 'Dancingscript';
+  double selectedPoliceSize = 15;
+
+  setPolice(value) {
+    print(value);
+    selectedPolice = value;
+    notifyListeners();
+  }
+
+  setPoliceSize(value) {
+    selectedPoliceSize = value;
+    notifyListeners();
+  }
 
   String setNewDataInQrCode(data) {
     qrCodeData =
@@ -37,8 +51,6 @@ class QrGenProvider with ChangeNotifier {
   }
 
   sendInviterInfoToServer(String eventId) async {
-
-    
     isSending = true;
 
     notifyListeners();

@@ -5,6 +5,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:hakika/screens/qr_generation/components/my_bottom_sheet_for_police.dart';
 import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -16,6 +17,7 @@ import '../../provider/details_screen_event_provider.dart';
 import '../../provider/qr_gen_provider.dart';
 import '../widgets/my_text_field.dart';
 import 'components/post_card_widget.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 
 class QrGenerationScreen extends StatelessWidget {
   final String eventId;
@@ -41,7 +43,7 @@ class QrGenerationScreen extends StatelessWidget {
                   color: Colors.black,
                   image: DecorationImage(
                     image: AssetImage(
-                        'lib/assets/img/jay.png'), // Image de fond de la carte postale
+                        'lib/assets/img/jeanette.png'), // Image de fond de la carte postale
                     fit: BoxFit.fill,
                   ),
                 ),
@@ -51,12 +53,12 @@ class QrGenerationScreen extends StatelessWidget {
                   children: [
                     // Ajouter les informations de la personne
                     Positioned(
-                      bottom: 20,
+                      bottom: 5,
                       right: 50,
                       child: QrImageView(
                         data: context.watch<QrGenProvider>().qrCodeData,
                         version: QrVersions.auto,
-                        size: 75.0,
+                        size: 80.0,
                         foregroundColor: Colors.black,
                         backgroundColor: Colors.white,
                       ),
@@ -64,45 +66,48 @@ class QrGenerationScreen extends StatelessWidget {
 
                     Positioned(
                       // top: 60,
-                      top: 85,
-                      left: 01,
+                      top: 45,
+                      right: 01,
                       child: SizedBox(
                         // color: Colors.red,
-                        width: MediaQuery.of(context).size.width / 1.7,
-                        height: 150,
+                        width: MediaQuery.of(context).size.width / 2.1,
+                        height: 190,
                         child: Text(
                           'Chèr(e), ${context.watch<QrGenProvider>().inviterNameController.value.text}, ${context.watch<DetailsSreenEventProvider>().eventDetails['title']} sont Heureux de vous inviter à la célébration de leur mariage le ${context.watch<QrGenProvider>().dateMariage} à ${context.watch<DetailsSreenEventProvider>().eventDetails['salle']} ${context.watch<DetailsSreenEventProvider>().eventDetails['adresse']} ',
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontFamily: 'Parisienne',
-                            color: Colors.white,
-                            fontSize: 13.5,
+                          style: TextStyle(
+                            fontFamily:
+                                context.watch<QrGenProvider>().selectedPolice,
+                            color: Colors.black,
+                            fontSize: context
+                                .watch<QrGenProvider>()
+                                .selectedPoliceSize,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ),
 
-                    Positioned(
-                      // top: 60,
-                      bottom: 10,
-                      left: 01,
-                      child: SizedBox(
-                        // color: Colors.red,
-                        width: MediaQuery.of(context).size.width / 1.7,
-                        height: 30,
-                        child: Text(
-                          ' ${context.watch<DetailsSreenEventProvider>().eventDetails['programme']} ',
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontFamily: 'PlaywriteUSA',
-                            color: Colors.white,
-                            fontSize: 8,
-                            // fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
+                    // Positioned(
+                    //   // top: 60,
+                    //   bottom: 10,
+                    //   left: 01,
+                    //   child: SizedBox(
+                    //     // color: Colors.red,
+                    //     width: MediaQuery.of(context).size.width / 1.7,
+                    //     height: 30,
+                    //     child: Text(
+                    //       ' ${context.watch<DetailsSreenEventProvider>().eventDetails['programme']} ',
+                    //       textAlign: TextAlign.center,
+                    //       style: const TextStyle(
+                    //         fontFamily: 'PlaywriteUSA',
+                    //         color: Colors.white,
+                    //         fontSize: 8,
+                    //         // fontWeight: FontWeight.bold,
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
                     // Positioned(
                     //   top: 270,
                     //   child: SizedBox(
@@ -175,24 +180,41 @@ class QrGenerationScreen extends StatelessWidget {
       //   name: "John Doe",
       //   additionalInfo: "QR Code généré à partir de Flutter.",
       // ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _saveQRCode(context),
-        child: const Icon(Icons.save),
+      floatingActionButton: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            heroTag: 'btnForPolice',
+            onPressed: () => myBottomSheetForPolice(context),
+            child: const Icon(Icons.policy),
+          ),
+          const SizedBox(width: 20),
+          FloatingActionButton(
+            onPressed: () => _saveQRCode(context),
+            child: const Icon(Icons.save),
+          ),
+        ],
       ),
     );
   }
 
   Future<void> _saveQRCode(BuildContext context) async {
+    // Request storage permission
     var status = await Permission.storage.request();
-    try {
-      status = await Permission.storage.status;
 
-      if (!status.isGranted) {
-        status = await Permission.storage.request();
+    // For Android 13 and above, request photos permission specifically
+    if (Platform.isAndroid) {
+      DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      if (androidInfo.version.sdkInt >= 33) {
+        // Android 13 (API level 33)
+        status = await Permission.photos.request();
       }
-      // Demander la permission de stockage
+    }
+
+    try {
       if (status.isGranted) {
-        // Prendre un screenshot du QR code
+        // Take a screenshot of the QR code
         RenderRepaintBoundary boundary =
             Provider.of<QrGenProvider>(context, listen: false)
                 .globalKey
@@ -203,39 +225,53 @@ class QrGenerationScreen extends StatelessWidget {
             await image.toByteData(format: ui.ImageByteFormat.png);
         Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-        // Enregistrer le fichier dans la mémoire locale
-        // final directory = await getDownloadsDirectory();
-        // String filePath = '${directory!.path}/qrcode.png';
-        // File imgFile = File(filePath);
-        // await imgFile.writeAsBytes(pngBytes);
+        // Save the file
+        final result = await ImageGallerySaver.saveImage(pngBytes,
+            name: "qrcode_hakika_${DateTime.now().millisecondsSinceEpoch}");
 
-        // Obtenir le répertoire où sauvegarder l'image
-        final directory = await getApplicationDocumentsDirectory();
-        final filePath = '${directory.path}/qrcode.png';
-
-        // Sauvegarder l'image en PNG
-        File file = File(filePath);
-        await file.writeAsBytes(pngBytes);
-
-        // Sauvegarder dans la galerie
-        await ImageGallerySaver.saveFile(filePath);
-
-        context.read<QrGenProvider>().sendInviterInfoToServer(eventId);
-
+        if (result['isSuccess']) {
+          context.read<QrGenProvider>().sendInviterInfoToServer(eventId);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('QR Code enregistré dans la galerie'),
+            backgroundColor: Colors.green,
+          ));
+          context.read<QrGenProvider>().clearController();
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(
+                'Erreur lors de l\`enregistrement du QR Code: ${result['errorMessage']}'),
+            backgroundColor: Colors.red,
+          ));
+        }
+      } else if (status.isPermanentlyDenied) {
+        // User has permanently denied the permission, open app settings
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'Permission de stockage refusée. Veuillez l\`activer dans les paramètres.'),
+            backgroundColor: Colors.orange,
+            action: SnackBarAction(
+              label: 'PARAMÈTRES',
+              onPressed: () {
+                openAppSettings();
+              },
+            ),
+          ),
+        );
+      } else if (status.isDenied) {
+        // Permission is denied, but not permanently
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('QR Code enregistré dans la galerie'),
-          backgroundColor: Colors.green,
-        ));
-
-        context.read<QrGenProvider>().clearController();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Permission de stockage refusée'),
+          content:
+              Text('Permission de stockage refusée pour enregistrer l\`image.'),
           backgroundColor: Colors.red,
         ));
       }
     } catch (e) {
       print('Erreur lors de la sauvegarde: $e');
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Une erreur est survenue lors de la sauvegarde.'),
+        backgroundColor: Colors.red,
+      ));
     }
   }
 }

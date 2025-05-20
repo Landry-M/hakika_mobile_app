@@ -16,6 +16,7 @@ import 'package:hakika/screens/home/home_screen_hote.dart';
 import 'package:hakika/screens/home/home_screen_protocole.dart';
 import 'package:hakika/screens/no_internet/no_internet_screen.dart';
 import 'package:hakika/screens/profil/profil_screen.dart';
+import 'package:hakika/screens/update-required/update_required_screen.dart';
 import 'package:provider/provider.dart';
 
 import 'provider/authentication_provider.dart';
@@ -115,6 +116,11 @@ class MyApp extends StatelessWidget {
       GoRoute(
         path: '/loading',
         builder: (context, state) => const LoadingScreen(),
+      ),
+      GoRoute(
+        path: '/update-required',
+        name: 'update-required',
+        builder: (context, state) => const UpdateRequiredScreen(),
       ),
       GoRoute(
         path: '/',
